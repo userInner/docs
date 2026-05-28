@@ -1,0 +1,59 @@
+---
+title: Get Order Book Range
+api: GET https://api.polydata.live/v1/orderbook/range
+description: "Fetch multiple orderbook snapshots within a time range."
+---
+
+Returns an array of full L2 orderbook snapshots between `since` and `until`. Useful for replaying market state over time.
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer pd_live_xxxxx`
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="since" type="number" required>Start time (Unix ms)</ParamField>
+<ParamField query="until" type="number" required>End time (Unix ms)</ParamField>
+<ParamField query="limit" type="number" default="100">Max snapshots to return (1-1000)</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">Array of orderbook snapshots (same shape as [GET /v1/orderbook](/api-reference/orderbook))</ResponseField>
+<ResponseField name="meta.count" type="number">Number of snapshots returned</ResponseField>
+
+### Example
+
+```bash
+curl "https://api.polydata.live/v1/orderbook/range?asset_id=xxx&since=1776240000000&until=1776243600000&limit=50" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+### Sample response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "timestamp": 1776240015000,
+      "asset_id": "13915689317269...",
+      "best_bid": 0.502,
+      "best_ask": 0.504,
+      "bids": [...],
+      "asks": [...]
+    },
+    {
+      "timestamp": 1776240105000,
+      "asset_id": "13915689317269...",
+      "best_bid": 0.503,
+      "best_ask": 0.505,
+      "bids": [...],
+      "asks": [...]
+    }
+  ],
+  "meta": { "count": 50 }
+}
+```

@@ -1,0 +1,168 @@
+---
+title: Backtesting Guide
+description: "Build a backtest using PolyData tick data."
+---
+
+This guide walks through building a simple mean-reversion backtest using PolyData.
+
+## What you'll build
+
+A strategy that:
+- Buys when YES price drops below 0.45
+- Sells when YES price rises above 0.55
+- Uses real orderbook depth to compute realistic fills
+
+## Setup
+
+```python
+import requests
+import pandas as pd
+from datetime import datetime, timedelta, timezone
+
+API_KEY = "pd_live_xxxxx"
+BASE = "https://api.polydata.live"
+HEADERS = {"Authorization": f"Bearer {API_KEY}"}
+
+def fetch_ticks(asset_id, start_ms, end_ms):
+    """Fetch all tick data for a market in a time range."""
+    resp = requests.get(
+        f"{BASE}/v1/ticks",
+        params={
+            "asset_id": asset_id,
+            "start": start_ms,
+            "end": end_ms,
+            "event_type": "price_change",
+            "limit": 100000,
+        },
+        headers=HEADERS,
+    )
+    return resp.json()["data"]
+
+def get_execution_price(asset_id, side, amount, timestamp_ms):
+    """Compute realistic fill price using historical orderbook depth."""
+    resp = requests.get(
+        f"{BASE}/v1/execution-price",
+        params={
+            "asset_id": asset_id,
+            "side": side,
+            "amount": amount,
+            "timestamp": timestamp_ms,
+        },
+        headers=HEADERS,
+    )
+    return resp.json()["data"]
+```
+
+## Choose a market
+
+Pick a market with reasonable volatility:
+
+```python
+ASSET_ID = "13915689317269078219168496739008737517740566192006337297676041270492637394586"
+
+# Time range: April 15, 2026, 8am UTC
+START = int(datetime(2026, 4, 15, 8, tzinfo=timezone.utc).timestamp() * 1000)
+END   = int(datetime(2026, 4, 15, 9, tzinfo=timezone.utc).timestamp() * 1000)
+```
+
+## Pull tick data
+
+```python
+ticks = fetch_ticks(ASSET_ID, START, END)
+df = pd.DataFrame(ticks)
+df["t"] = pd.to_datetime(df["t"], unit="ms")
+df = df.set_index("t")
+print(f"Loaded {len(df):,} ticks")
+print(df[["best_bid", "best_ask"]].head())
+```
+
+## Build the strategy
+
+```python
+class MeanReversionStrategy:
+    def __init__(self, buy_below=0.45, sell_above=0.55, position_size=100):
+        self.buy_below = buy_below
+        self.sell_above = sell_above
+        self.position_size = position_size
+        self.position = 0
+        self.cash = 10000
+        self.trades = []
+
+    def on_tick(self, ts, mid_price):
+        if mid_price < self.buy_below and self.position == 0:
+            # Buy with realistic fill
+            fill = get_execution_price(ASSET_ID, "BUY", self.position_size, int(ts.timestamp()*1000))
+            cost = fill["average_price"] * fill["filled_amount"]
+            self.cash -= cost
+            self.position += fill["filled_amount"]
+            self.trades.append({"t": ts, "side": "BUY", "price": fill["average_price"], "size": fill["filled_amount"]})
+
+        elif mid_price > self.sell_above and self.position > 0:
+            # Sell with realistic fill
+            fill = get_execution_price(ASSET_ID, "SELL", self.position, int(ts.timestamp()*1000))
+            proceeds = fill["average_price"] * fill["filled_amount"]
+            self.cash += proceeds
+            self.position -= fill["filled_amount"]
+            self.trades.append({"t": ts, "side": "SELL", "price": fill["average_price"], "size": fill["filled_amount"]})
+```
+
+## Run the backtest
+
+```python
+strat = MeanReversionStrategy()
+
+# Sample the price every 5 seconds (avoid running on every tick)
+df["mid"] = (df["best_bid"] + df["best_ask"]) / 2
+sampled = df.resample("5s")["mid"].last().dropna()
+
+for ts, mid in sampled.items():
+    if pd.notna(mid):
+        strat.on_tick(ts, mid)
+
+print(f"Final cash: {strat.cash:.2f}")
+print(f"Open position: {strat.position}")
+print(f"Trades: {len(strat.trades)}")
+```
+
+## Analyze results
+
+```python
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(12, 5))
+df["mid"].plot(ax=ax, label="Mid price", alpha=0.5)
+
+trades_df = pd.DataFrame(strat.trades).set_index("t")
+buys = trades_df[trades_df["side"] == "BUY"]
+sells = trades_df[trades_df["side"] == "SELL"]
+ax.scatter(buys.index, buys["price"], color="green", marker="^", s=100, label="Buy")
+ax.scatter(sells.index, sells["price"], color="red", marker="v", s=100, label="Sell")
+
+ax.legend()
+plt.show()
+```
+
+## Key concepts
+
+### Use realistic fills
+
+Don't backtest at `mid_price` or `best_bid`/`best_ask`. The `/v1/execution-price` endpoint walks the actual historical orderbook to compute what you'd really fill at, accounting for:
+
+- Order size impact
+- Available depth at each price level
+- Total slippage
+
+### Match data resolution to your strategy
+
+- **HFT (millisecond)**: Use raw ticks, no resampling
+- **Intraday (seconds–minutes)**: Sample at 1-5s intervals
+- **Swing trading (hours+)**: Use OHLCV candles directly
+
+### Don't peek into the future
+
+When making decisions at time `t`, only use data with `timestamp <= t`. PolyData's APIs are designed around this — if you pass `timestamp=T`, you get the latest snapshot **at or before** `T`.
+
+## Next steps
+
+- [Slippage Simulation](/guides/slippage-simulation) — Deeper dive into `/v1/execution-price`
+- [Bulk Export](/guides/data-export) — Download large date ranges efficiently

@@ -1,0 +1,119 @@
+---
+title: Authentication
+description: "API keys, Bearer tokens, and access control."
+---
+
+PolyData uses **API keys** for authentication. Pass your key as a Bearer token in the `Authorization` header on every request.
+
+## Getting an API key
+
+```bash
+curl -X POST https://api.polydata.live/v1/register
+```
+
+Or visit the [Dashboard](https://polydata.live/dashboard) and click **Create API key**.
+
+## Using your key
+
+```bash
+curl https://api.polydata.live/v1/orderbook?asset_id=xxx \
+  -H "Authorization: Bearer pd_live_xxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+API keys start with `pd_live_`.
+
+## Security best practices
+
+<Warning>
+**Never commit API keys to version control.** Treat them like passwords.
+</Warning>
+
+- Store keys in environment variables or secrets managers
+- Use a different key per environment (dev, staging, prod)
+- Rotate keys if you suspect compromise (regenerate from dashboard)
+
+### Example: environment variables
+
+<CodeGroup>
+```bash .env
+POLYDATA_API_KEY=pd_live_xxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+```python Python
+import os
+import requests
+
+API_KEY = os.environ["POLYDATA_API_KEY"]
+resp = requests.get(
+    "https://api.polydata.live/v1/orderbook",
+    params={"asset_id": "..."},
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+```
+
+```javascript Node.js
+const API_KEY = process.env.POLYDATA_API_KEY;
+const resp = await fetch("https://api.polydata.live/v1/orderbook?asset_id=...", {
+  headers: { Authorization: `Bearer ${API_KEY}` }
+});
+```
+</CodeGroup>
+
+## Public vs authenticated endpoints
+
+| Endpoint | Auth required |
+|----------|---------------|
+| `/v1/register` | No |
+| `/v1/markets` | No |
+| `/v1/markets/stats` | No |
+| `/v1/me` | Yes |
+| `/v1/billing/*` | Yes |
+| All `/v1/orderbook/*` | Yes |
+| All `/v1/ohlcv`, `/v1/price*` | Yes |
+| All `/v1/ticks*` | Yes |
+| `/v1/execution-price` | Yes |
+
+## Errors
+
+### 401 Unauthorized
+
+You forgot the `Authorization` header or the key is invalid.
+
+```json
+{
+  "detail": {
+    "error": "invalid_api_key",
+    "message": "Invalid API key. Check your key or register at https://polydata.live/register"
+  }
+}
+```
+
+### 403 Forbidden
+
+Your plan doesn't grant access to the requested data range.
+
+```json
+{
+  "detail": {
+    "error": "data_access_denied",
+    "message": "Your plan (free) only allows access to the last 0 day(s) of data.",
+    "plan": "free",
+    "earliest_allowed": "2026-05-26T00:00:00+00:00"
+  }
+}
+```
+
+### 429 Too Many Requests
+
+You hit your daily rate limit. Upgrade or wait for reset (UTC midnight).
+
+```json
+{
+  "detail": {
+    "error": "rate_limit_exceeded",
+    "message": "Daily request limit (100) exceeded.",
+    "limit": 100,
+    "plan": "free"
+  }
+}
+```

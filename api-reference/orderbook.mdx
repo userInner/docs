@@ -1,0 +1,93 @@
+---
+title: Get Order Book
+api: GET https://api.polydata.live/v1/orderbook
+description: "Fetch a historical orderbook snapshot at any point in time."
+---
+
+Returns the full L2 orderbook (bids + asks at all price levels) for an outcome token.
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer pd_live_xxxxx`
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>
+  Outcome token ID (Polymarket's CLOB token ID).
+</ParamField>
+
+<ParamField query="timestamp" type="number">
+  Unix timestamp in milliseconds. Returns the snapshot at or before this time. If omitted, returns the most recent available.
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Maximum number of price levels to return per side. Range: 1-100.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.market" type="string">Market condition ID</ResponseField>
+<ResponseField name="data.asset_id" type="string">Outcome token ID</ResponseField>
+<ResponseField name="data.timestamp" type="number">Snapshot timestamp (ms)</ResponseField>
+<ResponseField name="data.datetime" type="string">ISO datetime string</ResponseField>
+<ResponseField name="data.best_bid" type="number">Highest bid price</ResponseField>
+<ResponseField name="data.best_ask" type="number">Lowest ask price</ResponseField>
+<ResponseField name="data.bids" type="array">Array of `{price, size}`, sorted descending by price</ResponseField>
+<ResponseField name="data.asks" type="array">Array of `{price, size}`, sorted ascending by price</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash curl
+curl "https://api.polydata.live/v1/orderbook?asset_id=139156893172690782191684967390&timestamp=1776241000000&limit=10" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```python Python
+resp = requests.get(
+    "https://api.polydata.live/v1/orderbook",
+    params={
+        "asset_id": "139156893172690782191684967390...",
+        "timestamp": 1776241000000,
+        "limit": 10,
+    },
+    headers={"Authorization": "Bearer pd_live_xxxxx"}
+)
+book = resp.json()["data"]
+print(f"Best bid: {book['best_bid']}, Best ask: {book['best_ask']}")
+```
+</CodeGroup>
+
+### Sample response
+
+```json
+{
+  "success": true,
+  "data": {
+    "market": "0xa0f4c4924ea1a8b410b4ce821c2a9955fad21a1b19bdcfde90816732278b3dd5",
+    "asset_id": "13915689317269078219168496739008737517740566192006337297676041270492637394586",
+    "timestamp": 1776241000000,
+    "datetime": "2026-04-15 08:16:40.000",
+    "best_bid": 0.019,
+    "best_ask": 0.020,
+    "bids": [
+      { "price": 0.019, "size": 145.5 },
+      { "price": 0.018, "size": 200 }
+    ],
+    "asks": [
+      { "price": 0.020, "size": 80 },
+      { "price": 0.021, "size": 120 }
+    ]
+  }
+}
+```
+
+### Errors
+
+| Status | Error | Cause |
+|--------|-------|-------|
+| 401 | `invalid_api_key` | Missing or wrong API key |
+| 403 | `data_access_denied` | Your plan can't access this timestamp |
+| 404 | (no error code) | No snapshot available for this asset_id/timestamp |

@@ -1,0 +1,131 @@
+---
+title: Quickstart
+description: "Get your API key and run your first query in 30 seconds."
+---
+
+## 1. Get an API key
+
+Visit the [dashboard](https://polydata.live/dashboard) and click **Create API key**. No email required — your API key is your identity.
+
+```bash
+curl -X POST https://api.polydata.live/v1/register
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "api_key": "pd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "plan": "free"
+  }
+}
+```
+
+<Warning>
+Save your API key securely. It cannot be recovered if lost.
+</Warning>
+
+## 2. Make your first call
+
+Authenticate using a Bearer token:
+
+<CodeGroup>
+```bash curl
+curl https://api.polydata.live/v1/markets/stats \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```python Python
+import requests
+
+resp = requests.get(
+    "https://api.polydata.live/v1/markets/stats",
+    headers={"Authorization": "Bearer pd_live_xxxxx"}
+)
+print(resp.json())
+```
+
+```javascript JavaScript
+const resp = await fetch("https://api.polydata.live/v1/markets/stats", {
+  headers: { Authorization: "Bearer pd_live_xxxxx" }
+});
+console.log(await resp.json());
+```
+</CodeGroup>
+
+## 3. Fetch a historical orderbook
+
+To query historical data, you need an **asset_id** — Polymarket's outcome token ID. You can find one via the markets endpoint:
+
+```bash
+curl "https://api.polydata.live/v1/markets?limit=5"
+```
+
+Then fetch the orderbook at any moment:
+
+<CodeGroup>
+```bash curl
+curl "https://api.polydata.live/v1/orderbook?asset_id=14335534604605453660922028185403381450252058807325037884132006055073174291257&timestamp=1776241000000" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```python Python
+import requests
+
+asset_id = "14335534604605453660922028185403381450252058807325037884132006055073174291257"
+resp = requests.get(
+    "https://api.polydata.live/v1/orderbook",
+    params={"asset_id": asset_id, "timestamp": 1776241000000},
+    headers={"Authorization": "Bearer pd_live_xxxxx"}
+)
+book = resp.json()["data"]
+print(f"Best bid: {book['best_bid']}, Best ask: {book['best_ask']}")
+print(f"Bids: {book['bids'][:5]}")
+print(f"Asks: {book['asks'][:5]}")
+```
+</CodeGroup>
+
+## 4. Subscribe for historical data access
+
+Free plan limits you to public stats only. To access historical data, subscribe:
+
+```bash
+curl -X POST https://api.polydata.live/v1/billing/subscribe \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pd_live_xxxxx" \
+  -d '{"plan": "monthly"}'
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_url": "https://nowpayments.io/payment/?iid=xxx",
+    "amount_usd": 59.9,
+    "plan": "monthly"
+  }
+}
+```
+
+Open `invoice_url` in your browser, pay with USDT/USDC/BTC/ETH, and your account is upgraded automatically.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Backtesting Guide" icon="chart-line" href="/guides/backtesting">
+    Build a backtest using historical tick data.
+  </Card>
+  <Card title="Slippage Simulation" icon="arrows-up-down" href="/guides/slippage-simulation">
+    Compute realistic fill prices for any order size.
+  </Card>
+  <Card title="Bulk Export" icon="download" href="/guides/data-export">
+    Download large date ranges efficiently.
+  </Card>
+  <Card title="API Reference" icon="terminal" href="/api-reference/orderbook">
+    Full endpoint documentation.
+  </Card>
+</CardGroup>

@@ -1,0 +1,137 @@
+---
+title: Slippage Simulation
+description: "Compute realistic fill prices using historical orderbook depth."
+---
+
+When backtesting, the most common mistake is to assume you can fill any size at the best bid/ask. **Real markets don't work that way** — large orders walk the book and pay progressively worse prices.
+
+PolyData's `/v1/execution-price` endpoint solves this by **walking the historical orderbook** to compute the volume-weighted average price for any order size.
+
+## How it works
+
+Given:
+- `asset_id` — which token's orderbook to query
+- `side` — BUY (eat asks) or SELL (eat bids)
+- `amount` — desired order size
+- `timestamp` — when to simulate
+
+The endpoint:
+1. Finds the orderbook snapshot at or before `timestamp`
+2. Walks the price levels in order (asks ascending if BUY, bids descending if SELL)
+3. Fills as much as possible at each level until `amount` is satisfied or depth runs out
+4. Returns the volume-weighted average price + slippage breakdown
+
+## Example: small order
+
+```bash
+curl "https://api.polydata.live/v1/execution-price?asset_id=xxx&side=BUY&amount=100&timestamp=1776241500000" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "side": "BUY",
+    "requested_amount": 100,
+    "filled_amount": 100,
+    "average_price": 0.502,
+    "best_price": 0.500,
+    "slippage": 0.002,
+    "slippage_bps": 40,
+    "fully_filled": true,
+    "fills": [
+      { "price": 0.500, "size": 60 },
+      { "price": 0.503, "size": 40 }
+    ]
+  }
+}
+```
+
+The order filled across two price levels, paying an average of 0.502 (40 bps slippage from best ask).
+
+## Example: large order
+
+```bash
+curl "https://api.polydata.live/v1/execution-price?asset_id=xxx&side=BUY&amount=10000&timestamp=1776241500000" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+If liquidity isn't enough:
+
+```json
+{
+  "success": true,
+  "data": {
+    "side": "BUY",
+    "requested_amount": 10000,
+    "filled_amount": 7500,
+    "average_price": 0.523,
+    "best_price": 0.500,
+    "slippage": 0.023,
+    "slippage_bps": 460,
+    "fully_filled": false,
+    "fills": [...]
+  }
+}
+```
+
+`fully_filled: false` means the orderbook ran out before your order completed. In a backtest, you'd treat this as a partial fill or reject the trade.
+
+## Practical use
+
+### Pre-trade analysis
+
+Before committing to a trade size, check what slippage you'd realistically incur:
+
+```python
+def is_trade_viable(asset_id, side, amount, timestamp, max_slippage_bps=100):
+    resp = requests.get(
+        "https://api.polydata.live/v1/execution-price",
+        params={
+            "asset_id": asset_id,
+            "side": side,
+            "amount": amount,
+            "timestamp": timestamp,
+        },
+        headers={"Authorization": f"Bearer {API_KEY}"},
+    )
+    data = resp.json()["data"]
+    return data["fully_filled"] and data["slippage_bps"] <= max_slippage_bps
+```
+
+### Position sizing
+
+Find the maximum size you can trade without exceeding a slippage threshold:
+
+```python
+def max_size_within_slippage(asset_id, side, timestamp, max_bps=50):
+    sizes = [100, 500, 1000, 5000, 10000]
+    last_good = 0
+    for size in sizes:
+        resp = requests.get(
+            "https://api.polydata.live/v1/execution-price",
+            params={"asset_id": asset_id, "side": side, "amount": size, "timestamp": timestamp},
+            headers={"Authorization": f"Bearer {API_KEY}"},
+        )
+        data = resp.json()["data"]
+        if data["fully_filled"] and data["slippage_bps"] <= max_bps:
+            last_good = size
+        else:
+            break
+    return last_good
+```
+
+## Limitations
+
+<Note>
+**Slippage simulation uses orderbook snapshots**, which means: if your order is larger than what's visible at `timestamp`, the actual fill in live trading might be different (other traders react, new liquidity appears, etc.).
+
+For HFT/large-size strategies, consider these results as a baseline — your live execution may be better (passive maker rebates) or worse (impact on followers).
+</Note>
+
+## API Reference
+
+[Full endpoint documentation →](/api-reference/execution-price)

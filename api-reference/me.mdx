@@ -1,0 +1,60 @@
+---
+title: Get Current User
+api: GET https://api.polydata.live/v1/me
+description: "Fetch your account info and current plan status."
+---
+
+Returns details about your account, including plan, expiration, and usage.
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer pd_live_xxxxx`
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">User ID (UUID)</ResponseField>
+<ResponseField name="data.email" type="string">Email if provided during registration</ResponseField>
+<ResponseField name="data.plan" type="string">Current plan: `free`, `daily`, `monthly`, or `unlimited`</ResponseField>
+<ResponseField name="data.plan_active" type="boolean">Whether the plan is active</ResponseField>
+<ResponseField name="data.plan_expires_at" type="string">ISO timestamp when plan expires (null for free)</ResponseField>
+<ResponseField name="data.data_access_days" type="number">How many days of historical data you can access</ResponseField>
+<ResponseField name="data.rate_limit_daily" type="number">Daily request limit</ResponseField>
+<ResponseField name="data.requests_today" type="number">Requests used today</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash curl
+curl https://api.polydata.live/v1/me \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```python Python
+import requests
+resp = requests.get(
+    "https://api.polydata.live/v1/me",
+    headers={"Authorization": "Bearer pd_live_xxxxx"}
+)
+print(resp.json())
+```
+</CodeGroup>
+
+### Sample response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "email": "you@example.com",
+    "plan": "monthly",
+    "plan_active": true,
+    "plan_expires_at": "2026-06-25T00:00:00+00:00",
+    "data_access_days": 30,
+    "rate_limit_daily": 50000,
+    "requests_today": 1247
+  }
+}
+```

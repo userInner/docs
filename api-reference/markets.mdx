@@ -1,0 +1,42 @@
+---
+title: List Markets
+api: GET https://api.polydata.live/v1/markets
+description: "List available markets with their basic info."
+---
+
+Returns markets sorted by activity (most ticks first). **No authentication required** — this endpoint is public.
+
+### Query Parameters
+
+<ParamField query="search" type="string">Substring filter on market ID</ParamField>
+<ParamField query="limit" type="number" default="100">Max results (1-1000)</ParamField>
+<ParamField query="offset" type="number" default="0">Pagination offset</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of: `{market, asset_id, side, first_seen, last_seen, total_ticks}`
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://api.polydata.live/v1/markets?limit=5"
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "market": "0x05606cb15b475ef61ddba6881978c65efa8584ab02994a5f4e1e7093db4d28d6",
+      "asset_id": "23148412749026435776909805202107690906956736206326933282544938354875668913297",
+      "side": "YES",
+      "first_seen": "2026-04-15 08:00:00.035",
+      "last_seen": "2026-04-15 08:07:56.836",
+      "total_ticks": 212917
+    }
+  ],
+  "meta": { "count": 5, "offset": 0, "limit": 5 }
+}
+```

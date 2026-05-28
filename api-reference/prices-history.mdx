@@ -1,0 +1,42 @@
+---
+title: Prices History
+api: GET https://api.polydata.live/v1/prices-history
+description: "Historical midpoint price series with custom sampling."
+---
+
+Returns a time-series of midpoint prices, sampled at the specified `fidelity` interval.
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="start" type="number" required>Start time (Unix ms)</ParamField>
+<ParamField query="end" type="number" required>End time (Unix ms)</ParamField>
+<ParamField query="fidelity" type="number" default="60">Sampling interval in seconds (1-86400)</ParamField>
+<ParamField query="limit" type="number" default="1000">Max points (1-10000)</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of `{t, p}` where `t` is unix timestamp (seconds) and `p` is midpoint price.
+</ResponseField>
+
+### Example
+
+Get hourly prices for a day:
+
+```bash
+curl "https://api.polydata.live/v1/prices-history?asset_id=xxx&start=1776240000000&end=1776326400000&fidelity=3600" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    { "t": 1776240000, "p": 0.503 },
+    { "t": 1776243600, "p": 0.510 },
+    { "t": 1776247200, "p": 0.498 }
+  ],
+  "meta": { "count": 24, "fidelity": 3600 }
+}
+```

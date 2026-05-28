@@ -1,0 +1,43 @@
+---
+title: Billing Status
+api: GET https://api.polydata.live/v1/billing/status
+description: "View your subscription status."
+---
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer pd_live_xxxxx`
+</ParamField>
+
+### Response
+
+Same as `/v1/me` plan-related fields:
+
+<ResponseField name="data.plan" type="string" />
+<ResponseField name="data.active" type="boolean" />
+<ResponseField name="data.expires_at" type="string" />
+<ResponseField name="data.data_access_days" type="number" />
+<ResponseField name="data.rate_limit_daily" type="number" />
+<ResponseField name="data.requests_today" type="number" />
+
+### Example
+
+```bash
+curl https://api.polydata.live/v1/billing/status \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "plan": "monthly",
+    "active": true,
+    "expires_at": "2026-06-25T00:00:00+00:00",
+    "data_access_days": 30,
+    "rate_limit_daily": 50000,
+    "requests_today": 1247
+  }
+}
+```

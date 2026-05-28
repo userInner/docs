@@ -1,0 +1,83 @@
+---
+title: Event Types
+description: "Understanding the underlying event stream that powers PolyData."
+---
+
+PolyData stores Polymarket orderbook events at tick level. There are two main event types:
+
+## `price_change`
+
+A **price_change** event is emitted whenever a specific price level changes — typically because a new order was placed or an existing one was cancelled/filled.
+
+Example raw event:
+
+```json
+{
+  "event_type": "price_change",
+  "timestamp": 1776241838.000965,
+  "asset_id": "569140667881...",
+  "side": "NO",
+  "best_bid": 0.987,
+  "best_ask": 0.988,
+  "price": 0.808,
+  "size": 5,
+  "change_side": "BUY"
+}
+```
+
+Fields:
+- `price` + `size`: which level changed and to what size
+- `change_side`: BUY (bid side) or SELL (ask side)
+- `best_bid` + `best_ask`: top-of-book at this moment (for convenience)
+
+`price_change` events are the **majority** of the data stream — about 99.4% of all events.
+
+## `book`
+
+A **book** event is a full orderbook snapshot. Polymarket emits these:
+- When you first subscribe to a market
+- Periodically as a sync mechanism
+
+Example:
+
+```json
+{
+  "event_type": "book",
+  "timestamp": 1776242100.205,
+  "asset_id": "57948967639018...",
+  "side": "YES",
+  "best_bid": 0.002,
+  "best_ask": 0.003,
+  "bids": [["0.002", "161.58"]],
+  "asks": [["0.999", "79.69"], ["0.997", "10000"], ...]
+}
+```
+
+Use `book` events when you need the **complete depth** at a moment.
+
+## When to use which
+
+| Goal | Event |
+|------|-------|
+| Get current best bid/ask | `price_change` (most recent) |
+| Get full orderbook depth | `book` |
+| Track every change over time | `price_change` |
+| Reconstruct state at exact moment | `book` + replay `price_change` from there |
+
+PolyData's `/v1/orderbook` endpoint automatically does the right thing — finds the latest `book` snapshot and returns it.
+
+For tick-by-tick streams, use `/v1/ticks` and filter by `event_type`:
+
+```bash
+curl "https://api.polydata.live/v1/ticks?asset_id=xxx&start=...&end=...&event_type=price_change" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+## Other event types (less common)
+
+| Event | Meaning |
+|-------|---------|
+| `last_trade_price` | A trade was executed |
+| `tick_size_change` | Market's minimum price increment changed |
+
+These represent <0.1% of the stream and most users can ignore them.

@@ -1,0 +1,135 @@
+{
+  "theme": "mint",
+  "name": "PolyData",
+  "colors": {
+    "primary": "#10b981",
+    "light": "#34d399",
+    "dark": "#059669"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication",
+              "pricing"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/orderbook",
+              "concepts/asset-id",
+              "concepts/event-types",
+              "concepts/rate-limits"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/backtesting",
+              "guides/slippage-simulation",
+              "guides/data-export"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Account",
+            "pages": [
+              "api-reference/register",
+              "api-reference/me",
+              "api-reference/billing-status",
+              "api-reference/subscribe"
+            ]
+          },
+          {
+            "group": "Order Book",
+            "pages": [
+              "api-reference/orderbook",
+              "api-reference/orderbook-range"
+            ]
+          },
+          {
+            "group": "Prices & Candles",
+            "pages": [
+              "api-reference/price",
+              "api-reference/prices-history",
+              "api-reference/ohlcv"
+            ]
+          },
+          {
+            "group": "Tick Data",
+            "pages": [
+              "api-reference/ticks",
+              "api-reference/ticks-export"
+            ]
+          },
+          {
+            "group": "Execution",
+            "pages": [
+              "api-reference/execution-price"
+            ]
+          },
+          {
+            "group": "Markets",
+            "pages": [
+              "api-reference/markets",
+              "api-reference/markets-stats"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "href": "https://polydata.live/dashboard",
+          "icon": "user"
+        },
+        {
+          "anchor": "Playground",
+          "href": "https://polydata.live/playground",
+          "icon": "code"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/userInner/PolyData",
+          "icon": "github"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo.svg",
+    "dark": "/logo.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://polydata.live/dashboard"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://polydata.live/dashboard"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/userInner/PolyData"
+    }
+  }
+}

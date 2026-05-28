@@ -1,0 +1,66 @@
+---
+title: Register
+api: POST https://api.polydata.live/v1/register
+description: "Create a new account and receive an API key."
+---
+
+Creates a new user account. No email/password required — your API key is your identity.
+
+### Body
+
+<ParamField body="email" type="string" optional>
+  Optional contact email for billing notifications.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" />
+<ResponseField name="data.api_key" type="string">
+  Your API key. Format: `pd_live_xxxxxxxx`. **Save this — it cannot be recovered.**
+</ResponseField>
+<ResponseField name="data.plan" type="string">
+  Your initial plan. Always `free` after registration.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.polydata.live/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com"}'
+```
+
+```python Python
+import requests
+resp = requests.post(
+    "https://api.polydata.live/v1/register",
+    json={"email": "you@example.com"}
+)
+api_key = resp.json()["data"]["api_key"]
+```
+
+```javascript JavaScript
+const resp = await fetch("https://api.polydata.live/v1/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "you@example.com" })
+});
+const { data } = await resp.json();
+console.log("API Key:", data.api_key);
+```
+</CodeGroup>
+
+### Sample response
+
+```json
+{
+  "success": true,
+  "data": {
+    "api_key": "pd_live_IlYsplffUpdHUWIDxYhLEsbVTkxch608Ge6bH3-kh5c",
+    "plan": "free",
+    "message": "Save your API key securely. Use it as Bearer token in Authorization header.",
+    "example": "curl -H 'Authorization: Bearer pd_live_...' https://api.polydata.live/v1/me"
+  }
+}
+```

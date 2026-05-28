@@ -1,0 +1,104 @@
+---
+title: Pricing
+description: "Simple, transparent pricing. Pay with crypto. Cancel anytime."
+---
+
+## Plans
+
+<CardGroup cols={2}>
+  <Card title="Free" icon="circle">
+    **$0** forever
+    
+    - Stats endpoints only
+    - 100 requests/day
+    - No data access
+  </Card>
+  <Card title="Daily" icon="sun">
+    **$1** per day
+    
+    - Yesterday's data
+    - 1,000 requests/day
+    - All endpoints
+  </Card>
+  <Card title="Monthly" icon="calendar" href="https://polydata.live/dashboard?plan=monthly">
+    **$59.9** per month
+    
+    - Last 30 days
+    - 50,000 requests/day
+    - Bulk export
+    - Email support
+  </Card>
+  <Card title="Unlimited" icon="infinity">
+    **$99.9** per month
+    
+    - Full historical depth
+    - 500,000 requests/day
+    - Priority support
+  </Card>
+</CardGroup>
+
+## Detailed comparison
+
+| Feature | Free | Daily | Monthly | Unlimited |
+|---------|------|-------|---------|-----------|
+| Data access | Stats only | Yesterday | 30 days | All history |
+| Daily requests | 100 | 1,000 | 50,000 | 500,000 |
+| Order book snapshots | ❌ | ✅ | ✅ | ✅ |
+| OHLCV candles | ❌ | ✅ | ✅ | ✅ |
+| Tick-level data | ❌ | ✅ | ✅ | ✅ |
+| Bulk export (CSV/JSONL) | ❌ | ✅ | ✅ | ✅ |
+| Slippage simulation | ❌ | ✅ | ✅ | ✅ |
+| Priority support | ❌ | ❌ | ❌ | ✅ |
+
+## Payment
+
+We accept **100+ cryptocurrencies** via [NOWPayments](https://nowpayments.io):
+
+- USDT (TRC20, ERC20, BEP20)
+- USDC
+- BTC, ETH, SOL, BNB, MATIC
+- DAI, BUSD, and many more
+
+<Note>
+**No KYC required.** Payments are processed instantly. Your subscription activates within 5-10 minutes after blockchain confirmation.
+</Note>
+
+## How to subscribe
+
+<Steps>
+  <Step title="Get an API key">
+    Visit the [Dashboard](https://polydata.live/dashboard) and click **Create API key**.
+  </Step>
+  <Step title="Choose a plan">
+    Click **Subscribe** on your desired plan in the dashboard, or call:
+    
+    ```bash
+    curl -X POST https://api.polydata.live/v1/billing/subscribe \
+      -H "Authorization: Bearer pd_live_xxxxx" \
+      -d '{"plan": "monthly"}'
+    ```
+  </Step>
+  <Step title="Pay with crypto">
+    You'll be redirected to a NOWPayments invoice page. Send the exact amount in your chosen cryptocurrency.
+  </Step>
+  <Step title="Auto-upgrade">
+    Once the payment is confirmed on-chain, your account upgrades automatically. Check status at `/v1/billing/status`.
+  </Step>
+</Steps>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Is there auto-renewal?">
+    No. Subscriptions are non-recurring — you pay once and get access for the period you purchased. No surprise charges.
+  </Accordion>
+  <Accordion title="Can I cancel anytime?">
+    Yes. There's nothing to cancel because there's no auto-renewal. Your access expires at the end of your paid period.
+  </Accordion>
+  <Accordion title="What if I need a custom plan?">
+    For enterprise pricing, dedicated infrastructure, or specialized data needs, contact us at hello@polydata.live.
+  </Accordion>
+  <Accordion title="Do you offer refunds?">
+    We don't offer refunds for cryptocurrency payments due to volatility, but we'll work with you on disputes via email.
+  </Accordion>
+</AccordionGroup>

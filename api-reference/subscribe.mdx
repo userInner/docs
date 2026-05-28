@@ -1,0 +1,78 @@
+---
+title: Subscribe
+api: POST https://api.polydata.live/v1/billing/subscribe
+description: "Create a crypto payment invoice for a subscription plan."
+---
+
+Creates a NOWPayments invoice. Returns a URL where the user can pay with any of 100+ cryptocurrencies. After confirmation, the user's plan is upgraded automatically.
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer pd_live_xxxxx`
+</ParamField>
+
+### Body
+
+<ParamField body="plan" type="string" required>
+  Plan to subscribe to. One of: `daily`, `monthly`, `unlimited`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.invoice_url" type="string">
+  URL to redirect the user to NOWPayments invoice page.
+</ResponseField>
+<ResponseField name="data.payment_id" type="string">
+  NOWPayments payment ID for tracking.
+</ResponseField>
+<ResponseField name="data.amount_usd" type="number">
+  Price in USD.
+</ResponseField>
+<ResponseField name="data.plan" type="string">
+  Plan being subscribed to.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash curl
+curl -X POST https://api.polydata.live/v1/billing/subscribe \
+  -H "Authorization: Bearer pd_live_xxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"plan": "monthly"}'
+```
+
+```python Python
+resp = requests.post(
+    "https://api.polydata.live/v1/billing/subscribe",
+    json={"plan": "monthly"},
+    headers={"Authorization": "Bearer pd_live_xxxxx"}
+)
+print(resp.json()["data"]["invoice_url"])
+```
+</CodeGroup>
+
+### Sample response
+
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_url": "https://nowpayments.io/payment/?iid=5422817945",
+    "payment_id": "5422817945",
+    "amount_usd": 59.9,
+    "plan": "monthly"
+  }
+}
+```
+
+### Pricing
+
+| Plan | Price | Duration |
+|------|-------|----------|
+| daily | $1 | 1 day |
+| monthly | $59.9 | 30 days |
+| unlimited | $99.9 | 30 days |
+
+After payment confirmation (typically 5-10 min), your plan upgrades automatically. Check status via [GET /v1/billing/status](/api-reference/billing-status).

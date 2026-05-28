@@ -1,0 +1,157 @@
+---
+title: Data Export
+description: "Download large date ranges efficiently for offline analysis."
+---
+
+For analyzing weeks or months of data, fetching tick-by-tick over the API is slow. PolyData provides **streaming export** — get an entire date range as CSV or JSONL in a single request.
+
+## Endpoint
+
+```
+GET /v1/ticks/export
+```
+
+Parameters:
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `asset_id` | string | Outcome token ID |
+| `start` | int | Unix timestamp (ms) |
+| `end` | int | Unix timestamp (ms) |
+| `format` | string | `csv` (default) or `jsonl` |
+
+The response streams directly — bytes flow as soon as data is available, no need to wait for the full result.
+
+## Example: CSV download
+
+```bash
+curl "https://api.polydata.live/v1/ticks/export?asset_id=xxx&start=1776240000000&end=1776326400000&format=csv" \
+  -H "Authorization: Bearer pd_live_xxxxx" \
+  -o ticks.csv
+```
+
+You'll see download progress and end up with a file like:
+
+```csv
+timestamp,event_type,side,best_bid,best_ask,price,size
+1776240000035,price_change,YES,0.46,0.47,0.01,10974.76
+1776240000036,price_change,YES,0.46,0.47,0.09,2347.0
+...
+```
+
+## Example: load into pandas
+
+```python
+import pandas as pd
+
+df = pd.read_csv("ticks.csv", parse_dates={"t": ["timestamp"]}, date_format="%s.%f")
+print(df.head())
+print(f"Loaded {len(df):,} ticks")
+```
+
+Or stream directly without saving to disk:
+
+```python
+import requests
+import pandas as pd
+import io
+
+resp = requests.get(
+    "https://api.polydata.live/v1/ticks/export",
+    params={
+        "asset_id": "xxx",
+        "start": 1776240000000,
+        "end": 1776326400000,
+        "format": "csv",
+    },
+    headers={"Authorization": "Bearer pd_live_xxxxx"},
+    stream=True,
+)
+df = pd.read_csv(io.BytesIO(resp.content))
+```
+
+## Example: JSONL for streaming processing
+
+```bash
+curl "https://api.polydata.live/v1/ticks/export?...&format=jsonl" \
+  -H "Authorization: Bearer pd_live_xxxxx" \
+| while read line; do
+    echo "$line" | jq '.best_bid'
+  done
+```
+
+Each line is a self-contained JSON object:
+
+```json
+{"t": 1776240000035, "event": "price_change", "side": "YES", "best_bid": 0.46, "best_ask": 0.47, "price": 0.01, "size": 10974.76}
+```
+
+## Best practices
+
+### Chunk by day
+
+For multi-month exports, fetch one day at a time and save to local files. This:
+- Keeps memory usage bounded
+- Allows easy resumption if interrupted
+- Caches results so you don't re-fetch
+
+```python
+from datetime import datetime, timedelta, timezone
+import requests, os
+
+ASSET_ID = "xxx"
+HEADERS = {"Authorization": "Bearer pd_live_xxxxx"}
+
+start_date = datetime(2026, 4, 1, tzinfo=timezone.utc)
+end_date = datetime(2026, 4, 15, tzinfo=timezone.utc)
+day = start_date
+
+while day < end_date:
+    fname = f"ticks_{day.strftime('%Y-%m-%d')}.csv"
+    if os.path.exists(fname):
+        day += timedelta(days=1)
+        continue
+
+    next_day = day + timedelta(days=1)
+    print(f"Fetching {day.date()}...")
+    resp = requests.get(
+        "https://api.polydata.live/v1/ticks/export",
+        params={
+            "asset_id": ASSET_ID,
+            "start": int(day.timestamp() * 1000),
+            "end": int(next_day.timestamp() * 1000),
+            "format": "csv",
+        },
+        headers=HEADERS,
+        stream=True,
+    )
+    with open(fname, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=1024*1024):
+            f.write(chunk)
+    day = next_day
+```
+
+### Use Polars for large datasets
+
+For hundreds of millions of rows, pandas struggles. Polars handles it easily:
+
+```python
+import polars as pl
+
+df = pl.scan_csv("ticks_*.csv").collect()
+# or lazy:
+result = (
+    pl.scan_csv("ticks_*.csv")
+    .filter(pl.col("event_type") == "price_change")
+    .group_by_dynamic("timestamp", every="1m")
+    .agg([
+        pl.col("best_bid").mean().alias("avg_bid"),
+        pl.col("best_ask").mean().alias("avg_ask"),
+    ])
+    .collect()
+)
+```
+
+## Rate limit considerations
+
+Each export call counts as **one request** against your daily limit, regardless of how much data is returned. So one big export is much more efficient than many small queries.

@@ -1,0 +1,59 @@
+---
+title: Get Ticks
+api: GET https://api.polydata.live/v1/ticks
+description: "Raw tick-level orderbook events."
+---
+
+Returns the raw event stream for an asset within a time range. Each tick is a single orderbook event (price change, snapshot, etc.) at millisecond precision.
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="start" type="number" required>Start time (Unix ms)</ParamField>
+<ParamField query="end" type="number" required>End time (Unix ms)</ParamField>
+<ParamField query="event_type" type="string">Filter: `price_change`, `book`, `last_trade_price`</ParamField>
+<ParamField query="limit" type="number" default="10000">Max ticks (1-100000)</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of tick events. Each has `t`, `event`, `side`, `best_bid`, `best_ask`, `price`, `size`.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://api.polydata.live/v1/ticks?asset_id=xxx&start=1776240000000&end=1776240010000&limit=100" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "t": 1776240000035,
+      "event": "price_change",
+      "side": "YES",
+      "best_bid": 0.46,
+      "best_ask": 0.47,
+      "price": 0.01,
+      "size": 10974.76
+    },
+    {
+      "t": 1776240000037,
+      "event": "price_change",
+      "side": "YES",
+      "best_bid": 0.46,
+      "best_ask": 0.47,
+      "price": 0.45,
+      "size": 35.0
+    }
+  ],
+  "meta": { "count": 100 }
+}
+```
+
+<Tip>
+For larger datasets (millions of ticks), use [Get Ticks Export](/api-reference/ticks-export) for streaming download instead.
+</Tip>

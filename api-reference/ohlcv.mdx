@@ -1,0 +1,61 @@
+---
+title: Get OHLCV
+api: GET https://api.polydata.live/v1/ohlcv
+description: "Pre-aggregated candlestick data."
+---
+
+Returns OHLCV (open, high, low, close, volume) candles at the requested resolution.
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="resolution" type="string" default="1h">
+  Candle period: `1m`, `5m`, `15m`, `1h`, `4h`, `1d`
+</ParamField>
+<ParamField query="start" type="number">Start time (Unix ms)</ParamField>
+<ParamField query="end" type="number">End time (Unix ms)</ParamField>
+<ParamField query="limit" type="number" default="100">Max candles (1-1000)</ParamField>
+
+<Note>
+Candles are calculated from `best_bid`. **Volume** is the count of price-change events within the period (a proxy for activity, not actual traded size).
+</Note>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of candles: `{timestamp, open, high, low, close, volume}`. Sorted ascending by timestamp.
+</ResponseField>
+
+### Example
+
+Get last 24 hourly candles:
+
+```bash
+curl "https://api.polydata.live/v1/ohlcv?asset_id=xxx&resolution=1h&limit=24" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "timestamp": 1776240000000,
+      "open": 0.500,
+      "high": 0.520,
+      "low": 0.495,
+      "close": 0.510,
+      "volume": 4521
+    },
+    {
+      "timestamp": 1776243600000,
+      "open": 0.510,
+      "high": 0.515,
+      "low": 0.498,
+      "close": 0.503,
+      "volume": 3910
+    }
+  ],
+  "meta": { "count": 24, "resolution": "1h" }
+}
+```

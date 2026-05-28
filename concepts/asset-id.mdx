@@ -1,0 +1,83 @@
+---
+title: Asset IDs
+description: "Understanding Polymarket's market and outcome identifiers."
+---
+
+Polymarket has two key identifiers you need to know:
+
+## Market ID (Condition ID)
+
+A **market** is a question, like "Will Bitcoin hit $150k by June 30, 2026?". Each market has a unique **condition ID** (also called market ID or contract address):
+
+```
+0xa0f4c4924ea1a8b410b4ce821c2a9955fad21a1b19bdcfde90816732278b3dd5
+```
+
+This is a 32-byte hex string starting with `0x`.
+
+## Asset ID (Outcome Token ID)
+
+Each market has **two outcomes** (YES / NO), and each outcome is a separate ERC1155 token. The token ID is a large numeric string:
+
+```
+13915689317269078219168496739008737517740566192006337297676041270492637394586
+```
+
+Each outcome (YES or NO) has its own orderbook, so when querying PolyData you always specify an `asset_id`, not a `market_id`.
+
+## How to find IDs
+
+### Option 1: PolyData markets endpoint
+
+```bash
+curl "https://api.polydata.live/v1/markets?limit=10"
+```
+
+Returns a list of `(market, asset_id, side)` tuples for active markets.
+
+### Option 2: Polymarket CLOB API
+
+If you know the market slug:
+
+```bash
+curl "https://clob.polymarket.com/markets?slug=will-bitcoin-hit-150k-by-june-30-2026"
+```
+
+Returns the market with `condition_id` and `tokens` array (one per outcome).
+
+### Option 3: Polymarket SDK
+
+```python
+from py_clob_client.client import ClobClient
+
+client = ClobClient(host="https://clob.polymarket.com")
+market = client.get_market(condition_id="0xa0f4c4924ea1a8...")
+yes_token_id = market["tokens"][0]["token_id"]
+no_token_id = market["tokens"][1]["token_id"]
+```
+
+## Example
+
+For "Will BTC hit $150k":
+
+| Field | Value |
+|-------|-------|
+| Question | Will Bitcoin hit $150k by June 30, 2026? |
+| Market ID | `0xa0f4c4924ea1a8b410b4ce821c2a9955fad21a1b19bdcfde90816732278b3dd5` |
+| YES asset_id | `13915689317269078219168496739008737517740566192006337297676041270492637394586` |
+| NO asset_id  | `13290642914521189871602119663452054126359842904805799115978921503195267156991` |
+
+Querying the YES token:
+
+```bash
+curl "https://api.polydata.live/v1/orderbook?asset_id=13915689317269078219168496739008737517740566192006337297676041270492637394586" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+## Common mistakes
+
+<Warning>
+**Don't pass the market ID where an asset_id is expected.** Many endpoints accept only `asset_id`. The market ID is for grouping (one market = two asset IDs), not for direct querying.
+</Warning>
+
+If you accidentally use a market ID instead of an asset_id, you'll get an empty result rather than an error.

@@ -1,0 +1,36 @@
+---
+title: Markets Stats
+api: GET https://api.polydata.live/v1/markets/stats
+description: "Database-wide statistics."
+---
+
+Returns overall stats about the dataset. **No authentication required.**
+
+### Response
+
+<ResponseField name="data.total_rows" type="number">Total ticks in the database</ResponseField>
+<ResponseField name="data.unique_markets" type="number">Distinct markets</ResponseField>
+<ResponseField name="data.unique_tokens" type="number">Distinct outcome tokens</ResponseField>
+<ResponseField name="data.earliest" type="string">Earliest tick timestamp</ResponseField>
+<ResponseField name="data.latest" type="string">Latest tick timestamp</ResponseField>
+<ResponseField name="data.storage_size" type="string">Compressed storage size</ResponseField>
+
+### Example
+
+```bash
+curl https://api.polydata.live/v1/markets/stats
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_rows": 27265974786,
+    "unique_markets": 29907,
+    "unique_tokens": 59811,
+    "earliest": "2026-03-17 14:31:53.361",
+    "latest": "2026-04-28 22:59:59.923",
+    "storage_size": "186.32 GiB"
+  }
+}
+```

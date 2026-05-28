@@ -1,0 +1,55 @@
+---
+title: Execution Price (Slippage)
+api: GET https://api.polydata.live/v1/execution-price
+description: "Compute realistic fill price by walking historical orderbook depth."
+---
+
+Returns the volume-weighted average price (VWAP) for a hypothetical order at a historical moment. Walks the full orderbook, level by level, until the order is filled.
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="side" type="string" required>`BUY` (eats asks) or `SELL` (eats bids)</ParamField>
+<ParamField query="amount" type="number" required>Order size to simulate</ParamField>
+<ParamField query="timestamp" type="number" required>Simulate at this time (Unix ms)</ParamField>
+
+### Response
+
+<ResponseField name="data.requested_amount" type="number">Original order size</ResponseField>
+<ResponseField name="data.filled_amount" type="number">Actually filled (may be less if liquidity ran out)</ResponseField>
+<ResponseField name="data.average_price" type="number">VWAP across all fills</ResponseField>
+<ResponseField name="data.best_price" type="number">Best price (top of book)</ResponseField>
+<ResponseField name="data.slippage" type="number">`average_price - best_price`</ResponseField>
+<ResponseField name="data.slippage_bps" type="number">Slippage in basis points</ResponseField>
+<ResponseField name="data.fully_filled" type="boolean">Whether the entire order was filled</ResponseField>
+<ResponseField name="data.fills" type="array">First 10 levels: `{price, size}`</ResponseField>
+
+### Example
+
+```bash
+curl "https://api.polydata.live/v1/execution-price?asset_id=xxx&side=BUY&amount=1000&timestamp=1776241000000" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "side": "BUY",
+    "requested_amount": 1000,
+    "filled_amount": 1000,
+    "average_price": 0.5034,
+    "best_price": 0.5000,
+    "slippage": 0.0034,
+    "slippage_bps": 68.0,
+    "fully_filled": true,
+    "fills": [
+      { "price": 0.500, "size": 200 },
+      { "price": 0.502, "size": 350 },
+      { "price": 0.505, "size": 450 }
+    ]
+  }
+}
+```
+
+See the [Slippage Simulation Guide](/guides/slippage-simulation) for practical use cases.

@@ -1,0 +1,45 @@
+---
+title: Get Price
+api: GET https://api.polydata.live/v1/price
+description: "Get best bid/ask, midpoint, and spread at any moment."
+---
+
+Returns top-of-book price information.
+
+### Authentication
+
+<ParamField header="Authorization" type="string" required>`Bearer pd_live_xxxxx`</ParamField>
+
+### Query Parameters
+
+<ParamField query="asset_id" type="string" required>Outcome token ID</ParamField>
+<ParamField query="timestamp" type="number">Unix ms. If omitted, returns latest.</ParamField>
+
+### Response
+
+<ResponseField name="data.best_bid" type="number" />
+<ResponseField name="data.best_ask" type="number" />
+<ResponseField name="data.midpoint" type="number">Average of bid and ask</ResponseField>
+<ResponseField name="data.spread" type="number">ask − bid</ResponseField>
+
+### Example
+
+```bash
+curl "https://api.polydata.live/v1/price?asset_id=xxx&timestamp=1776241000000" \
+  -H "Authorization: Bearer pd_live_xxxxx"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "asset_id": "13915689317269...",
+    "timestamp": 1776241000000,
+    "datetime": "2026-04-15 08:16:40.000",
+    "best_bid": 0.502,
+    "best_ask": 0.504,
+    "midpoint": 0.503,
+    "spread": 0.002
+  }
+}
+```

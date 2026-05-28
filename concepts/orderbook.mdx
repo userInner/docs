@@ -1,0 +1,78 @@
+---
+title: Order Book
+description: "Understanding L2 orderbook data on Polymarket."
+---
+
+## What is an order book?
+
+An **order book** is a list of all open buy (bid) and sell (ask) orders for a particular asset, sorted by price. Polymarket uses a Central Limit Order Book (CLOB) where market makers post limit orders and takers fill them.
+
+Each market in Polymarket has **two sides**:
+- **YES** outcome
+- **NO** outcome
+
+Each side has its own order book.
+
+## L1 vs L2 vs L3
+
+| Level | What's included | Use case |
+|-------|----------------|----------|
+| L1 | Best bid + best ask only | Display the current price |
+| **L2** | **All price levels with aggregated size** | Backtesting, depth analysis |
+| L3 | Every individual order with order ID | Market microstructure research |
+
+PolyData provides **L2 data** — the same depth view you see on Polymarket's website, but historical and queryable.
+
+## Example
+
+```json
+{
+  "market": "0xa0f4c4924ea1a8b410b4ce821c2a9955fad21a1b19bdcfde90816732278b3dd5",
+  "asset_id": "13915689317269078219168496739008737517740566192006337297676041270492637394586",
+  "timestamp": 1776241000000,
+  "best_bid": 0.019,
+  "best_ask": 0.020,
+  "bids": [
+    { "price": 0.019, "size": 145.5 },
+    { "price": 0.018, "size": 200 },
+    { "price": 0.017, "size": 350 }
+  ],
+  "asks": [
+    { "price": 0.020, "size": 80 },
+    { "price": 0.021, "size": 120 },
+    { "price": 0.022, "size": 500 }
+  ]
+}
+```
+
+- `best_bid` = highest price someone is willing to buy at
+- `best_ask` = lowest price someone is willing to sell at
+- `bids[]` = sorted descending (highest first)
+- `asks[]` = sorted ascending (lowest first)
+- `(best_ask - best_bid)` = **spread**
+- `(best_bid + best_ask) / 2` = **midpoint**
+
+## Reconstructing historical state
+
+PolyData stores two types of records:
+
+1. **Snapshots (`book` events)** — Full orderbook at a moment in time
+2. **Changes (`price_change` events)** — Incremental updates to specific price levels
+
+To get the orderbook at any timestamp, we find the latest snapshot ≤ that timestamp. For maximum precision, you can apply subsequent `price_change` events on top.
+
+The `/v1/orderbook?timestamp=...` endpoint handles this automatically — you just specify a timestamp and get back the full reconstructed book.
+
+## Tick size and price grid
+
+Polymarket prices are in the range `[0, 1]` (probability of YES outcome). Tick sizes are typically:
+
+- `0.001` (1/10 of a cent)
+- `0.01` (1 cent) — for less liquid markets
+
+Be aware that tick size can change during a market's lifetime when prices approach 0 or 1.
+
+## See also
+
+- [API Reference: Order Book](/api-reference/orderbook)
+- [Slippage Simulation Guide](/guides/slippage-simulation)
